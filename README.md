@@ -1,1 +1,114 @@
-# game_of_the_day
+# GameNight Backend
+
+Backend API for **GameNight** — helps sports fans answer: *"What are the best games to watch tonight?"*
+
+This MVP serves sample NBA game data and calculates a default **Watch Score** for each game.
+
+## Tech Stack
+
+- Python 3.10+
+- FastAPI
+- Pydantic
+- Sample in-memory data (SQLite / real sports API coming later)
+
+## Setup
+
+### 1. Create a virtual environment
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+**macOS / Linux:**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the FastAPI server
+
+```bash
+uvicorn main:app --reload
+```
+
+The API will be available at `http://127.0.0.1:8000`.
+
+### 4. Open the interactive API docs
+
+- Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- ReDoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/games` | All sample NBA games, sorted by Watch Score (highest first) |
+| `GET` | `/api/games/{game_id}` | One game by ID with full score breakdown |
+
+### Example responses
+
+**Health check**
+
+```bash
+curl http://127.0.0.1:8000/api/health
+```
+
+**List games**
+
+```bash
+curl http://127.0.0.1:8000/api/games
+```
+
+**Single game**
+
+```bash
+curl http://127.0.0.1:8000/api/games/nba-2026-06-15-lal-bos
+```
+
+## Watch Score Formula
+
+Each game has factor scores from 0–100. The default Watch Score is a weighted average:
+
+| Factor | Weight |
+|--------|--------|
+| Offense | 20% |
+| Close game likelihood | 20% |
+| Star power | 20% |
+| Playoff importance | 15% |
+| Rivalry | 10% |
+| Defense | 10% |
+| Network / accessibility | 5% |
+
+The score is rounded to the nearest whole number and capped between 0 and 100.
+
+## Project Structure
+
+```
+main.py          # FastAPI app and routes
+models.py        # Pydantic response models
+sample_data.py   # Sample NBA games
+scoring.py       # Watch Score calculation and "why watch" text
+requirements.txt # Python dependencies
+README.md        # This file
+```
+
+## CORS
+
+CORS is enabled for common local frontend dev ports (`localhost:3000`, `localhost:5173`).
+
+## What's Not Included Yet
+
+- Authentication
+- Real database (SQLite)
+- Live sports data API
