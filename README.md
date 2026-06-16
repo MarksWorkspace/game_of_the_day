@@ -11,7 +11,23 @@ This MVP serves sample NBA game data and calculates a default **Watch Score** fo
 - Pydantic
 - Sample in-memory data (SQLite / real sports API coming later)
 
-## Setup
+## Quick start (easiest)
+
+**Windows — double-click or run from terminal:**
+
+```powershell
+.\run.bat
+```
+
+Or in PowerShell:
+
+```powershell
+.\run.ps1
+```
+
+This creates the virtual environment if needed, installs dependencies, opens the API docs in your browser, and starts the server at `http://127.0.0.1:8000` (or `8080` if port 8000 is already in use).
+
+## Setup (manual)
 
 ### 1. Create a virtual environment
 
@@ -38,8 +54,10 @@ pip install -r requirements.txt
 ### 3. Run the FastAPI server
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
+
+Or use `.\run.bat` / `.\run.ps1` instead (recommended on Windows).
 
 The API will be available at `http://127.0.0.1:8000`.
 
