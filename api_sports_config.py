@@ -24,6 +24,14 @@ API_KEY_HEADER = "x-apisports-key"
 
 DAILY_REQUEST_LIMIT = 100
 
+# Common baseball league names → API-SPORTS league IDs (for direct API calls).
+BASEBALL_LEAGUES: dict[str, int] = {
+    "MLB": 1,
+    "LMB": 21,
+    "NPB": 2,
+    "KBO": 3,
+}
+
 # Free plan only allows recent dates (API returns the valid window in errors).
 # Example: "try from 2026-06-21 to 2026-06-23"
 

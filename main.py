@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from api_sports_client import ApiSportsError, get_games
+from api_sports_config import BASEBALL_LEAGUES
 from models import (
     FactorBreakdown,
     Game,
@@ -96,11 +97,11 @@ async def list_baseball_games(
         description="Game date in YYYY-MM-DD format (must be within your API plan window).",
         examples=["2026-06-22"],
     ),
-    league: Optional[int] = Query(
-        None,
-        description="League ID filter (e.g. 1 = MLB). Omit for all leagues on that date.",
+    league: str = Query(
+        "MLB",
+        description="League name (e.g. MLB, LMB, NPB, KBO). Defaults to MLB.",
+        examples=["MLB"],
     ),
-    season: Optional[int] = Query(None, description="Season year (e.g. 2026)."),
     timezone: Optional[str] = Query(
         None,
         description="Timezone for dates (e.g. America/New_York).",
@@ -110,20 +111,18 @@ async def list_baseball_games(
     Return up to 5 baseball games for a date from API-SPORTS.
 
     Frontend example:
-        GET /api/baseball/games?date=2026-06-22
-        GET /api/baseball/games?date=2026-06-22&league=1
+        GET /api/baseball/games?date=2026-06-22&league=MLB
     """
-    try:
-        season_param = season
-        if league is not None and season_param is None:
-            season_param = int(date[:4])
-
-        raw = await get_games(
-            date=date,
-            league=league,
-            season=season_param,
-            timezone=timezone,
+    league_key = league.strip().upper()
+    if league_key not in BASEBALL_LEAGUES:
+        known = ", ".join(sorted(BASEBALL_LEAGUES))
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown league '{league}'. Supported: {known}",
         )
+
+    try:
+        raw = await get_games(date=date, timezone=timezone)
     except ApiSportsError as exc:
         status = 502 if exc.status_code is None else exc.status_code
         if isinstance(exc.errors, dict) and "plan" in exc.errors:
@@ -131,11 +130,17 @@ async def list_baseball_games(
         raise HTTPException(status_code=status, detail=str(exc)) from exc
 
     all_games = raw.get("response") or []
-    top_games = all_games[:LIVE_GAMES_LIMIT]
+    league_games = [
+        game
+        for game in all_games
+        if game.get("league", {}).get("name", "").upper() == league_key
+    ]
+    top_games = league_games[:LIVE_GAMES_LIMIT]
 
     return LiveBaseballGamesResponse(
         date=date,
-        total_available=len(all_games),
+        league=league_key,
+        total_available=len(league_games),
         count=len(top_games),
         games=[LiveBaseballGame(**game) for game in top_games],
     )

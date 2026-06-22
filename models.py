@@ -111,6 +111,9 @@ class LiveBaseballGamesResponse(BaseModel):
     """Top live/sample baseball games for a date (from API-SPORTS)."""
 
     date: str
-    total_available: int = Field(..., description="Total games API-SPORTS returned for this query")
+    league: str = Field(..., description="League name filter applied (e.g. MLB)")
+    total_available: int = Field(
+        ..., description="Total games matching the league filter for this date"
+    )
     count: int = Field(..., description="Number of games in this response (max 5)")
     games: list[LiveBaseballGame]
