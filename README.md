@@ -125,8 +125,29 @@ README.md        # This file
 
 CORS is enabled for common local frontend dev ports (`localhost:3000`, `localhost:5173`).
 
+## API-SPORTS integration
+
+Baseball API client files:
+
+- `api_sports_config.py` — base URLs, endpoints, parameter docs
+- `api_sports_client.py` — async `get_leagues()` and `get_games_h2h()` helpers
+
+Setup:
+
+1. Copy `.env.example` to `.env` and add your key:
+   ```
+   APISPORTS_KEY=your_api_key_here
+   ```
+2. Free tier is **100 requests/day** — cache responses when you wire this into routes.
+
+Test (uses 2 API requests):
+
+```powershell
+python test_api_sports.py
+```
+
 ## What's Not Included Yet
 
 - Authentication
 - Real database (SQLite)
-- Live sports data API
+- Live sports data wired into `/api/games` (client is ready)

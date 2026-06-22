@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
-
 
 class FactorBreakdown(BaseModel):
     """How one scoring factor contributed to the Watch Score."""
@@ -61,3 +60,57 @@ class HealthResponse(BaseModel):
 class GamesResponse(BaseModel):
     count: int
     games: list[Game]
+
+
+class LiveGameStatus(BaseModel):
+    long: str
+    short: str
+
+
+class LiveGameLeague(BaseModel):
+    id: int
+    name: str
+    season: int
+
+
+class LiveGameTeam(BaseModel):
+    id: int
+    name: str
+    logo: Optional[str] = None
+
+
+class LiveGameTeams(BaseModel):
+    home: LiveGameTeam
+    away: LiveGameTeam
+
+
+class LiveGameScoresSide(BaseModel):
+    total: Optional[int] = None
+    hits: Optional[int] = None
+    errors: Optional[int] = None
+
+
+class LiveGameScores(BaseModel):
+    home: LiveGameScoresSide
+    away: LiveGameScoresSide
+
+
+class LiveBaseballGame(BaseModel):
+    """One baseball game from API-SPORTS."""
+
+    id: int
+    date: str
+    time: str
+    status: LiveGameStatus
+    league: LiveGameLeague
+    teams: LiveGameTeams
+    scores: LiveGameScores
+
+
+class LiveBaseballGamesResponse(BaseModel):
+    """Top live/sample baseball games for a date (from API-SPORTS)."""
+
+    date: str
+    total_available: int = Field(..., description="Total games API-SPORTS returned for this query")
+    count: int = Field(..., description="Number of games in this response (max 5)")
+    games: list[LiveBaseballGame]

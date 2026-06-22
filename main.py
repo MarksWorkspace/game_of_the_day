@@ -1,7 +1,19 @@
-from fastapi import FastAPI, HTTPException
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import FactorBreakdown, Game, GameDetail, GamesResponse, HealthResponse, ScoreBreakdown
+from api_sports_client import ApiSportsError, get_games
+from models import (
+    FactorBreakdown,
+    Game,
+    GameDetail,
+    GamesResponse,
+    HealthResponse,
+    LiveBaseballGame,
+    LiveBaseballGamesResponse,
+    ScoreBreakdown,
+)
 from sample_data import SAMPLE_GAMES
 from scoring import build_score_breakdown, enrich_game
 
@@ -71,3 +83,59 @@ def get_game(game_id: str) -> GameDetail:
             return _build_game_detail(enriched)
 
     raise HTTPException(status_code=404, detail=f"Game not found: {game_id}")
+
+
+LIVE_GAMES_LIMIT = 5
+
+
+@app.get("/api/baseball/games", response_model=LiveBaseballGamesResponse)
+async def list_baseball_games(
+    date: str = Query(
+        ...,
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+        description="Game date in YYYY-MM-DD format (must be within your API plan window).",
+        examples=["2026-06-22"],
+    ),
+    league: Optional[int] = Query(
+        None,
+        description="League ID filter (e.g. 1 = MLB). Omit for all leagues on that date.",
+    ),
+    season: Optional[int] = Query(None, description="Season year (e.g. 2026)."),
+    timezone: Optional[str] = Query(
+        None,
+        description="Timezone for dates (e.g. America/New_York).",
+    ),
+) -> LiveBaseballGamesResponse:
+    """
+    Return up to 5 baseball games for a date from API-SPORTS.
+
+    Frontend example:
+        GET /api/baseball/games?date=2026-06-22
+        GET /api/baseball/games?date=2026-06-22&league=1
+    """
+    try:
+        season_param = season
+        if league is not None and season_param is None:
+            season_param = int(date[:4])
+
+        raw = await get_games(
+            date=date,
+            league=league,
+            season=season_param,
+            timezone=timezone,
+        )
+    except ApiSportsError as exc:
+        status = 502 if exc.status_code is None else exc.status_code
+        if isinstance(exc.errors, dict) and "plan" in exc.errors:
+            status = 403
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
+
+    all_games = raw.get("response") or []
+    top_games = all_games[:LIVE_GAMES_LIMIT]
+
+    return LiveBaseballGamesResponse(
+        date=date,
+        total_available=len(all_games),
+        count=len(top_games),
+        games=[LiveBaseballGame(**game) for game in top_games],
+    )
